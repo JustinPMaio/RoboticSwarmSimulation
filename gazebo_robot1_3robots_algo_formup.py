@@ -323,6 +323,7 @@ def go(msg):
 				print("reached target")
 	if orders == "6":
 		assigned = False
+		Ready = False
 		for item in all_spots:
 			item.occupied = False
 		right = False
