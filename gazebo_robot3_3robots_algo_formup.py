@@ -415,6 +415,71 @@ def go(msg):
 					pub = rospy.Publisher("/robot3/cmd_vel", Twist, queue_size=2)
 					pub.publish(move)
 					print("reached target")
+	if orders == "6":
+		assigned = False
+		Ready = False
+		if position1:
+			angle = atan2(0, -0.5) - np.pi
+		if position2:
+			angle = atan2(0.3, 0.25)) - np.pi
+		if position3:
+			angle = atan2(-0.2, 0.25) - np.pi
+		if angle < -3.1415:
+			angle += (2*np.pi)  # important line of code to make sure the angle value stays in the correct range of values
+		if (angle-0.1) < MyHeading < (angle + 0.1):
+			Ready = True
+			move = Twist()
+			move.linear.x = 0.0
+			move.angular.z = 0.0
+			move.linear.y = 0.0
+			pub = rospy.Publisher("/robot3/cmd_vel", Twist, queue_size=2)
+			pub.publish(move)
+		if not Ready:
+			if 0 <= MyHeading < (np.pi/2):  # get the rover to turn right in some cases, depending on its quadrant
+				if (np.pi/-2) <= angle <= 0:
+					right = True
+			if (np.pi/-2) <= MyHeading < 0:
+				if (np.pi*-1) <= angle <= (np.pi/-2):
+					right = True
+			if (np.pi/-1) <= MyHeading < (np.pi/-2):
+				if (np.pi/2) <= angle <= np.pi:
+					right = True
+			if (np.pi/2) <= MyHeading < np.pi:
+				if 0 <= angle <= (np.pi/2):
+					right = True
+				move = Twist()
+				move.linear.x = 0.0
+				move.angular.z = 1.0
+				move.linear.y = 0.0
+				if right:
+					move.angular.z = -1.0
+				pub = rospy.Publisher("/robot3/cmd_vel", Twist, queue_size=2)
+				pub.publish(move)
+				print("must face target")
+			if object_ahead:
+				move = Twist()
+				move.linear.x = 0.0
+				move.angular.z = 0.0
+				move.linear.y = 0.0
+				pub = rospy.Publisher("/robot3/cmd_vel", Twist, queue_size=2)
+				pub.publish(move)
+		if Ready and not object_ahead:
+			right = False
+			move = Twist()
+			move.linear.x = 0.5
+			if robot_ahead:
+				move.linear.x = 0.1
+			move.angular.z = 0.0
+			move.linear.y = 0.0
+			pub = rospy.Publisher("/robot3/cmd_vel", Twist, queue_size=2)
+			pub.publish(move)
+		if object_ahead:
+			move = Twist()
+			move.linear.x = 0.0
+			move.angular.z = 0.0
+			move.linear.y = 0.0
+			pub = rospy.Publisher("/robot3/cmd_vel", Twist, queue_size=2)
+			pub.publish(move)
 
 
 def signal_handler(signal, frame):
