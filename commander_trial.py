@@ -63,10 +63,14 @@ if __name__ == '__main__':
 				talker()
 			if key == "5":
 				print("swarm will cluster in center")
+				clustered = True
 				talker()
 			if key == "6":
-				print("swarm will spread out")
-				talker()
+				if clustered:
+					print("swarm will spread out")
+					talker()
+				if not clustered:
+					print("swarm needs to cluster first")
 			if key == "0":
 				print("swarm will stop")
 				talker()
