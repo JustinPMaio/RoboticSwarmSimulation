@@ -329,7 +329,7 @@ def go(msg):
 		right = False
 		for item in all_spots:
 			if R1.spot == item.number:  # the robot needs to point to its assigned position.
-				angle = atan2(0 - item.y, 0 - item.x) - np.pi
+				angle = atan2(1.5 - item.y, 1.5 - item.x) - np.pi
 		if angle < -3.1415:
 			angle += (2*np.pi)  # important line of code to make sure the angle value stays in the correct range of values
 		if (angle-0.1) < R1.heading < (angle + 0.1):
