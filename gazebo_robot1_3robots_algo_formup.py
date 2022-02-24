@@ -147,7 +147,6 @@ def go(msg):
 			item.spot = 0
 		for item in all_spots:
 			item.occupied = False
-		assigned = False
 		right = False
 		move = Twist()
 		move.linear.x = 0.0
@@ -322,6 +321,70 @@ def go(msg):
 				pub = rospy.Publisher("/robot1/cmd_vel", Twist, queue_size=2)
 				pub.publish(move)
 				print("reached target")
+	if orders == "6":
+		assigned = False
+		for item in all_spots:
+			item.occupied = False
+		right = False
+		for item in all_spots:
+			if R1.spot == item.number:  # the robot needs to point to its assigned position.
+				angle = atan2(0 - item.y, 0 - item.x) - np.pi
+		if angle < -3.1415:
+			angle += (2*np.pi)  # important line of code to make sure the angle value stays in the correct range of values
+		if (angle-0.1) < R1.heading < (angle + 0.1):
+			Ready = True
+			move = Twist()
+			move.linear.x = 0.0
+			move.angular.z = 0.0
+			move.linear.y = 0.0
+			pub = rospy.Publisher("/robot1/cmd_vel", Twist, queue_size=2)
+			pub.publish(move)
+		if not Ready:
+			if 0 <= R1.heading < (np.pi/2):  # get the rover to turn right in some cases, depending on its quadrant
+				if (np.pi/-2) <= angle <= 0:
+					right = True
+			if (np.pi/-2) <= R1.heading < 0:
+				if (np.pi*-1) <= angle <= (np.pi/-2):
+					right = True
+			if (np.pi/-1) <= R1.heading < (np.pi/-2):
+				if (np.pi/2) <= angle <= np.pi:
+					right = True
+			if (np.pi/2) <= R1.heading < np.pi:
+				if 0 <= angle <= (np.pi/2):
+					right = True
+				move = Twist()
+				move.linear.x = 0.0
+				move.angular.z = 1.0
+				move.linear.y = 0.0
+				if right:
+					move.angular.z = -1.0
+				pub = rospy.Publisher("/robot1/cmd_vel", Twist, queue_size=2)
+				pub.publish(move)
+				print("must face target")
+			if object_ahead:
+				move = Twist()
+				move.linear.x = 0.0
+				move.angular.z = 0.0
+				move.linear.y = 0.0
+				pub = rospy.Publisher("/robot1/cmd_vel", Twist, queue_size=2)
+				pub.publish(move)
+		if Ready and not object_ahead:
+			right = False
+			move = Twist()
+			move.linear.x = 0.5
+			if robot_ahead:
+				move.linear.x = 0.1
+			move.angular.z = 0.0
+			move.linear.y = 0.0
+			pub = rospy.Publisher("/robot1/cmd_vel", Twist, queue_size=2)
+			pub.publish(move)
+		if object_ahead:
+			move = Twist()
+			move.linear.x = 0.0
+			move.angular.z = 0.0
+			move.linear.y = 0.0
+			pub = rospy.Publisher("/robot1/cmd_vel", Twist, queue_size=2)
+			pub.publish(move)
 
 
 def signal_handler(signal, frame):
