@@ -60,6 +60,7 @@ if __name__ == '__main__':
 				talker()
 			if key == "4":
 				print("swarm will pivot")
+				clustered = False
 				talker()
 			if key == "5":
 				print("swarm will cluster in center")
