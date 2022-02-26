@@ -1,7 +1,5 @@
 #!/usr/bin/env python
 
-#Dan was here
-
 import rospy
 import sys, select, termios, tty, signal
 import threading
@@ -52,16 +50,20 @@ if __name__ == '__main__':
 		while(1):
 			key = getKey(key_timeout)
 			if key == "1":
+				clustered = False
 				print("swarm will drive around randomly")
 				talker()
 			if key == "2":
-				print("swarm will form up")
+				clustered = False
+				print("swarm will form up vertically")
 				talker()
 			if key == "3":
+				clustered = False
 				print("swarm will form V")
 				talker()
 			if key == "4":
-				print("swarm will pivot")
+				clustered = False
+				print("swarm will form up horiontally")
 				clustered = False
 				talker()
 			if key == "5":
@@ -74,6 +76,7 @@ if __name__ == '__main__':
 					talker()
 				if not clustered:
 					print("swarm needs to cluster first")
+				clustered = False
 			if key == "0":
 				print("swarm will stop")
 				talker()
@@ -81,4 +84,3 @@ if __name__ == '__main__':
 		pass
 	finally:
 		termios.tcsetattr(sys.stdin, termios.TCSADRAIN, settings)
-
