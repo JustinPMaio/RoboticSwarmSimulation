@@ -21,7 +21,6 @@ assigned = bool(False)
 right = bool(False)
 TargetX = float(0)
 TargetY = float(0)
-
 R1 = Robot(0, 0, 0, 0)
 R2 = Robot(0, 0, 0, 0)
 R3 = Robot(0, 0, 0, 0)
@@ -31,7 +30,6 @@ S3 = Spot(0, 0, 3)
 S1.number = 1
 S2.number = 2
 S3.number = 3
-
 
 def update_orders(msg):
 	global orders
@@ -123,7 +121,7 @@ def go(msg):
 		if object_ahead:
 			move = Twist()
 			move.linear.x = 0.0
-			move.angular.z = 1.0
+			move.angular.z = 0.5
 			move.linear.y = 0.0
 			pub = rospy.Publisher("/robot1/cmd_vel", Twist, queue_size=1)
 			pub.publish(move)
@@ -143,8 +141,6 @@ def go(msg):
 			pub.publish(move)
 	if orders == "0":
 		assigned = False
-		for item in all_robots:
-			item.spot = 0
 		for item in all_spots:
 			item.occupied = False
 		right = False
@@ -168,14 +164,21 @@ def go(msg):
 		S2.y = 1
 		S3.x = 2
 		S3.y = 0
+	if orders == "4":
+		S1.y = 0
+		S1.x = 0
+		S2.y = 1
+		S2.x = 0
+		S3.y = 2
+		S3.x = 0
 	if orders == "5":
-		S1.x = 2
+		S1.x = 1.7
 		S1.y = 1.5
 		S2.x = 1.25
 		S2.y = 1.2
 		S3.x = 1.25
 		S3.y = 1.7
-	if orders == "2" or "3" or "4" or "5":
+	if orders == "2" or orders == "3" or orders == "4" or orders == "5":
 		Ready = False
 		center_x = float((S1.x + S2.x + S3.x)/3)
 		center_y = float((S1.y + S2.y + S3.y)/3)
@@ -284,10 +287,10 @@ def go(msg):
 						right = True
 				move = Twist()
 				move.linear.x = 0.0
-				move.angular.z = 1.0
+				move.angular.z = 0.5
 				move.linear.y = 0.0
 				if right:
-					move.angular.z = -1.0
+					move.angular.z = -0.5
 				pub = rospy.Publisher("/robot1/cmd_vel", Twist, queue_size=2)
 				pub.publish(move)
 				print("must face target")
@@ -328,18 +331,12 @@ def go(msg):
 			item.occupied = False
 		right = False
 		for item in all_spots:
-			if R1.spot == item.number:  # the robot needs to point to its assigned position.
-				angle = atan2(1.5 - item.y, 1.5 - item.x) - np.pi
+			if float(R1.spot) == float(item.number):  # the robot needs to point to its assigned position.
+				angle = float(atan2((1.5 - item.y), (1.5 - item.x)) - np.pi)
 		if angle < -3.1415:
 			angle += (2*np.pi)  # important line of code to make sure the angle value stays in the correct range of values
-		if (angle-0.1) < R1.heading < (angle + 0.1):
+		if (angle-0.3) < R1.heading < (angle + 0.3):
 			Ready = True
-			move = Twist()
-			move.linear.x = 0.0
-			move.angular.z = 0.0
-			move.linear.y = 0.0
-			pub = rospy.Publisher("/robot1/cmd_vel", Twist, queue_size=2)
-			pub.publish(move)
 		if not Ready:
 			if 0 <= R1.heading < (np.pi/2):  # get the rover to turn right in some cases, depending on its quadrant
 				if (np.pi/-2) <= angle <= 0:
@@ -353,22 +350,15 @@ def go(msg):
 			if (np.pi/2) <= R1.heading < np.pi:
 				if 0 <= angle <= (np.pi/2):
 					right = True
-				move = Twist()
-				move.linear.x = 0.0
-				move.angular.z = 1.0
-				move.linear.y = 0.0
-				if right:
-					move.angular.z = -1.0
-				pub = rospy.Publisher("/robot1/cmd_vel", Twist, queue_size=2)
-				pub.publish(move)
-				print("must face target")
-			if object_ahead:
-				move = Twist()
-				move.linear.x = 0.0
-				move.angular.z = 0.0
-				move.linear.y = 0.0
-				pub = rospy.Publisher("/robot1/cmd_vel", Twist, queue_size=2)
-				pub.publish(move)
+			move = Twist()
+			move.linear.x = 0.0
+			move.angular.z = 0.5
+			move.linear.y = 0.0
+			if right and not object_ahead:
+				move.angular.z = -0.5
+			pub = rospy.Publisher("/robot1/cmd_vel", Twist, queue_size=2)
+			pub.publish(move)
+			print("must face target")
 		if Ready and not object_ahead:
 			right = False
 			move = Twist()
@@ -382,7 +372,7 @@ def go(msg):
 		if object_ahead:
 			move = Twist()
 			move.linear.x = 0.0
-			move.angular.z = 0.0
+			move.angular.z = 0.5
 			move.linear.y = 0.0
 			pub = rospy.Publisher("/robot1/cmd_vel", Twist, queue_size=2)
 			pub.publish(move)
