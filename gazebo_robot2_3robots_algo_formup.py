@@ -117,9 +117,10 @@ def check_assignment(msg):
 	global TargetX
 	global TargetY
 	assignment = msg.data
-	print(assignment)
 	if "R2spot1" in assignment:
 		position1 = True
+		position2 = False
+		position3 = False
 		assigned = True
 		print("I am first")
 		if orders == "2":
@@ -128,11 +129,16 @@ def check_assignment(msg):
 		if orders == "3":
 			TargetX = 2
 			TargetY = 2
+		if orders == "4":
+			TargetX = 0
+			TargetY = 0
 		if orders == "5":
-			TargetX = 2
+			TargetX = 1.7
 			TargetY = 1.5
 	if "R2spot2" in assignment:
+		position1 = False
 		position2 = True
+		position3 = False
 		assigned = True
 		print("I am second")
 		if orders == "2":
@@ -141,11 +147,16 @@ def check_assignment(msg):
 		if orders == "3":
 			TargetX = 1
 			TargetY = 1
+		if orders == "4":
+			TargetX = 0
+			TargetY = 1
 		if orders == "5":
 			TargetX = 1.25
 			TargetY = 1.2
 	if "R2spot3" in assignment:
-		position3 = True	
+		position1 = False
+		position2 = False
+		position3 = True
 		assigned = True	 
 		print("I am third")
 		if orders == "2":
@@ -154,6 +165,9 @@ def check_assignment(msg):
 		if orders == "3":
 			TargetX = 2
 			TargetY = 0
+		if orders == "4": 
+			TargetX = 0
+			TargetY = 2
 		if orders == "5":
 			TargetX = 1.25
 			TargetY = 1.7
@@ -188,9 +202,6 @@ def go(msg):
 			pub = rospy.Publisher("/robot2/cmd_vel", Twist, queue_size=2)
 			pub.publish(move)
 	if orders == "0":
-		position1 = False
-		position2 = False
-		position3 = False
 		assigned = False
 		move = Twist()
 		move.linear.x = 0.0
@@ -329,6 +340,7 @@ def go(msg):
 					move.linear.x = 0.5
 					if robot_ahead:
 						move.linear.x = 0.1
+						print("slowing down for robot ahead")
 					move.angular.z = 0.0
 					move.linear.y = 0.0
 					pub = rospy.Publisher("/robot2/cmd_vel", Twist, queue_size=2)
@@ -342,12 +354,83 @@ def go(msg):
 					pub = rospy.Publisher("/robot2/cmd_vel", Twist, queue_size=2)
 					pub.publish(move)
 					print("reached target") 
-# placeholder for orders 3 and orders 4
+	if orders == "4":
+		Ready = False
+		if assigned:
+			if position1:
+				angle = atan2(MyY, MyX) - np.pi
+			if position2:
+				angle = atan2((MyY-1), MyX) - np.pi
+			if position3:
+				angle = atan2((MyY-2), MyX) - np.pi
+			if angle < -3.1415:
+				angle += (2*np.pi)
+			if (angle-0.3) < MyHeading < (angle + 0.3):
+				Ready = True
+				move = Twist()
+				move.linear.x = 0.0
+				move.angular.z = 0.0
+				move.linear.y = 0.0
+				pub = rospy.Publisher("/robot2/cmd_vel", Twist, queue_size=2)
+				pub.publish(move)
+			if not Ready:
+				target_distance = math.sqrt(((MyY-TargetY)**2)+((MyX-TargetX)**2))
+				if target_distance > 0.1:
+					if 0 <= MyHeading < (np.pi/2):  # get the rover to turn right in some cases, depending on its quadrant
+						if (np.pi/-2) <= angle <= 0:
+							right = True
+					if (np.pi/-2) <= MyHeading < 0:
+						if (np.pi*-1) <= angle <= (np.pi/-2):
+							right = True
+					if (np.pi/-1) <= MyHeading < (np.pi/-2):
+						if (np.pi/2) <= angle <= np.pi:
+							right = True
+					if (np.pi/2) <= MyHeading < np.pi:
+						if 0 <= angle <= (np.pi/2):
+							right = True
+					move = Twist()
+					move.linear.x = 0.0
+					move.angular.z = 1.0
+					move.linear.y = 0.0
+					if right:
+						move.angular.z = -1.0
+					pub = rospy.Publisher("/robot2/cmd_vel", Twist, queue_size=2)
+					pub.publish(move)
+					print("must face target")
+				if target_distance <= 0.1:
+					move = Twist()
+					move.linear.x = 0.0
+					move.angular.z = 0.0
+					move.linear.y = 0.0
+					pub = rospy.Publisher("/robot2/cmd_vel", Twist, queue_size=2)
+					pub.publish(move)
+					print("reached target")
+			if Ready:
+				right = False
+				target_distance = math.sqrt(((MyY-TargetY)**2)+((MyX-TargetX)**2))
+				if target_distance > 0.1:
+					move = Twist()
+					move.linear.x = 0.5
+					if robot_ahead:
+						move.linear.x = 0.1
+					move.angular.z = 0.0
+					move.linear.y = 0.0
+					pub = rospy.Publisher("/robot2/cmd_vel", Twist, queue_size=2)
+					pub.publish(move)
+					print("target distance: {}".format(target_distance)) 
+				if target_distance <= 0.1:
+					move = Twist()
+					move.linear.x = 0.0
+					move.angular.z = 0.0
+					move.linear.y = 0.0
+					pub = rospy.Publisher("/robot2/cmd_vel", Twist, queue_size=2)
+					pub.publish(move)
+					print("reached target") 
 	if orders == "5":
 		Ready = False
 		if assigned:
 			if position1:
-				angle = atan2(MyY-1.5, MyX-2) - np.pi
+				angle = atan2(MyY-1.5, MyX-1.7) - np.pi
 			if position2:
 				angle = atan2(MyY-1.2, (MyX-1.25)) - np.pi
 			if position3:
@@ -419,21 +502,15 @@ def go(msg):
 		assigned = False
 		Ready = False
 		if position1:
-			angle = atan2(0, -0.5) - np.pi
+			angle = float(atan2(0, -0.5) - np.pi)
 		if position2:
-			angle = atan2(0.3, 0.25)) - np.pi
+			angle = float(atan2(0.3, 0.25) - np.pi)
 		if position3:
-			angle = atan2(-0.2, 0.25) - np.pi
+			angle = float(atan2(-0.2, 0.25) - np.pi)
 		if angle < -3.1415:
 			angle += (2*np.pi)  # important line of code to make sure the angle value stays in the correct range of values
-		if (angle-0.1) < MyHeading < (angle + 0.1):
+		if (angle-0.3) < MyHeading < (angle + 0.3):
 			Ready = True
-			move = Twist()
-			move.linear.x = 0.0
-			move.angular.z = 0.0
-			move.linear.y = 0.0
-			pub = rospy.Publisher("/robot2/cmd_vel", Twist, queue_size=2)
-			pub.publish(move)
 		if not Ready:
 			if 0 <= MyHeading < (np.pi/2):  # get the rover to turn right in some cases, depending on its quadrant
 				if (np.pi/-2) <= angle <= 0:
@@ -447,22 +524,15 @@ def go(msg):
 			if (np.pi/2) <= MyHeading < np.pi:
 				if 0 <= angle <= (np.pi/2):
 					right = True
-				move = Twist()
-				move.linear.x = 0.0
-				move.angular.z = 1.0
-				move.linear.y = 0.0
-				if right:
-					move.angular.z = -1.0
-				pub = rospy.Publisher("/robot2/cmd_vel", Twist, queue_size=2)
-				pub.publish(move)
-				print("must face target")
-			if object_ahead:
-				move = Twist()
-				move.linear.x = 0.0
-				move.angular.z = 0.0
-				move.linear.y = 0.0
-				pub = rospy.Publisher("/robot2/cmd_vel", Twist, queue_size=2)
-				pub.publish(move)
+			move = Twist()
+			move.linear.x = 0.0
+			move.angular.z = 1.0
+			move.linear.y = 0.0
+			if right:
+				move.angular.z = -1.0
+			pub = rospy.Publisher("/robot2/cmd_vel", Twist, queue_size=2)
+			pub.publish(move)
+			print("must face target")
 		if Ready and not object_ahead:
 			right = False
 			move = Twist()
@@ -476,7 +546,7 @@ def go(msg):
 		if object_ahead:
 			move = Twist()
 			move.linear.x = 0.0
-			move.angular.z = 0.0
+			move.angular.z = 1.0
 			move.linear.y = 0.0
 			pub = rospy.Publisher("/robot2/cmd_vel", Twist, queue_size=2)
 			pub.publish(move)
