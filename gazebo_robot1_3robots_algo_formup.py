@@ -13,6 +13,9 @@ from tf.transformations import euler_from_quaternion, quaternion_from_euler
 from std_msgs.msg import String
 from robot import Robot, Spot
 object_ahead = bool(False)
+heading_north = bool(False)
+heading_fixed = bool(False)
+ranges = []
 robot_ahead = bool(False)
 roll = pitch = yaw = 0.0
 orders = " "
@@ -49,6 +52,8 @@ def get_rotation_pos(msg):
 
 def check_laser(msg):
 	global object_ahead
+	global ranges
+	ranges = msg.ranges
 	object_ahead = False
 	object_ahead_distance = min(msg.ranges[0], msg.ranges[10], msg.ranges[20], msg.ranges[350], msg.ranges[340])
 	if object_ahead_distance < 0.8:
@@ -141,6 +146,9 @@ def go(msg):
 			pub.publish(move)
 	if orders == "0":
 		assigned = False
+		in_position = False
+		heading_north = False
+		heading_fixed = False
 		for item in all_spots:
 			item.occupied = False
 		right = False
@@ -306,7 +314,7 @@ def go(msg):
 			print("drive ahead")
 			right = False
 			target_distance = math.sqrt(((R1.y-TargetY)**2)+((R1.x - TargetX)**2))
-			if target_distance > 0.05:
+			if target_distance > 0.05 and if not in_position:
 				move = Twist()
 				move.linear.x = 0.5
 				if robot_ahead:
@@ -316,14 +324,61 @@ def go(msg):
 				pub = rospy.Publisher("/robot1/cmd_vel", Twist, queue_size=2)
 				pub.publish(move)
 				print(target_distance)
-			if target_distance <= 0.05:
+			if target_distance <= 0.05 and if not in_position:
 				move = Twist()
 				move.linear.x = 0.0
 				move.angular.z = 0.0
 				move.linear.y = 0.0
 				pub = rospy.Publisher("/robot1/cmd_vel", Twist, queue_size=2)
 				pub.publish(move)
+				in_position = True
 				print("reached target")
+			if in_position and if not heading_north and if orders == 2:
+				print("fixing heading")
+				move = Twist()
+				move.linear.x = 0.0
+				move.linear.y = 0.0
+				move.angular.z = 0.3
+				if -0.05 < R1.heading < 0.05:
+					move.angular.z = 0.0
+					heading_fixed = True
+					print("I think I'm facing North")
+				pub = rospy.Publisher("/robot1/cmd_vel", Twist, queue_size=2)
+				pub.publish(move)
+			if heading_north:
+				if R1.Spot == S3:
+					heading_fixed = True
+					move = Twist()
+					move.linear.x = 0.0
+					move.linear.y = 0.0
+					if ranges[358] < ranges[0] < ranges[2] and if ranges[88] < ranges[90] < ranges[92]:
+						move.angular.z = 0.1
+						heading_fixed = False
+					if ranges[358] > ranges[0] > ranges[2] and if ranges[88] > ranges[90] > ranges[92]:
+						move.angular.z = -0.1
+						heading_fixed = False
+					if heading_fixed = True:
+						move.angular.z = 0.0
+						nav_msgs::Odometry odom;
+						odom.header.stamp = current_time
+						odom.header.frame_id = "odom"
+						odom.pose.pose.position.x = 3.65 - ranges[0]
+						odom.pose.pose.position.y = ranges[90]
+						odom.pose.pose.position.z = 0.0
+						odom.pose.pose.orientation.w = 0
+						odom.pose.pose.orientation.x = 0
+						odom.pose.pose.orientation.y = 0
+						odom.pose.pose.orientation.z = 0
+						odom.child_frame_id = "base_link"
+						odom.twist.twist.linear.x = 0
+						odom.twist.twist.linear.y = 0
+						odom.twist.twist.angular.z = 0						
+						pub3 = rospy.Publisher("/robot1/odom", Odometry, queue_size=1)
+						pub3.publish(odom)
+						print("Now I KNOW I'm facing North")
+				pub = rospy.Publisher("/robot1/cmd_vel", Twist, queue_size=2)
+				pub.publish(move)
+				
 	if orders == "6":
 		assigned = False
 		Ready = False
