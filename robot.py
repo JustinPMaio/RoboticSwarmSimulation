@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 class Robot:
-	def __init__(self, x, y, heading, spot):
+	def __init__(self, x, y, heading, spot, distance):
 		self.x = float(0)
 		self.y = float(0)
 		self.heading = float(0)
