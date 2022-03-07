@@ -9,6 +9,7 @@ from nav_msgs.msg import Odometry
 from sensor_msgs.msg import LaserScan
 import sys
 import signal
+import message_filters #this is what should allow a single callback on multiple messages.
 from tf.transformations import euler_from_quaternion, quaternion_from_euler
 from std_msgs.msg import String
 from robot import Robot, Spot
@@ -27,28 +28,64 @@ TargetY = float(0)
 R1 = Robot(0, 0, 0, 0)
 R2 = Robot(0, 0, 0, 0)
 R3 = Robot(0, 0, 0, 0)
+R4 = Robot(0, 0, 0, 0)
+R5 = Robot(0, 0, 0, 0)
+R6 = Robot(0, 0, 0, 0)
+R7 = Robot(0, 0, 0, 0)
 S1 = Spot(0, 0, 1)
 S2 = Spot(0, 0, 2)
 S3 = Spot(0, 0, 3)
-S1.number = 1
-S2.number = 2
-S3.number = 3
+S4 = Spot(0, 0, 4)
+S5 = Spot(0, 0, 5)
+S6 = Spot(0, 0, 6)
+S7 = Spot(0, 0, 7)
+all_robots = [R1, R2, R3, R4, R5, R6, R7]
+all_spots = [S1, S2, S3, S4, S5, S6, S7]
 
 def update_orders(msg):
 	global orders
 	orders = msg.data
 	print(orders)
 
-
-def get_rotation_pos(msg):
+def check_robots(R1_pose, R2_pose, R3_pose, R4_pose, R5_pose, R6_pose, R7_pose):
 	global roll, pitch, yaw
+	global robot_ahead
+	robot_ahead = False
 	orientation_q = msg.pose.pose.orientation
 	orientation_list = [orientation_q.x, orientation_q.y, orientation_q.z, orientation_q.w]
 	(roll, pitch, yaw) = euler_from_quaternion (orientation_list)
-	R1.heading = yaw
-	R1.x = float(msg.pose.pose.position.x)
-	R1.y = float(msg.pose.pose.position.y)
-
+	MyHeading = yaw
+	MyX = float(R1_pose.pose.pose.position.x)
+	MyY = float(R1_pose.pose.pose.position.y)
+	R2.x = float(R2_pose.pose.pose.position.x)
+	R2.y = float(R2_pose.pose.pose.position.y)
+	R3.x = float(R3_pose.pose.pose.position.x)
+	R3.y = float(R3_pose.pose.pose.position.y)
+	R4.x = float(R4_pose.pose.pose.position.x)
+	R4.y = float(R4_pose.pose.pose.position.y)
+	R5.x = float(R5_pose.pose.pose.position.x)
+	R5.y = float(R5_pose.pose.pose.position.y)
+	R6.x = float(R6_pose.pose.pose.position.x)
+	R6.y = float(R6_pose.pose.pose.position.y)
+	R7.x = float(R7_pose.pose.pose.position.x)
+	R7.y = float(R7_pose.pose.pose.position.y)
+	for item in all_robots:
+		distance = math.sqrt((item.x - MyX)**2 + (item.y - MyY)**2)
+		if 0 < distance < 0.75
+			Xdistance = item.x - MyX
+			Ydistance = item.y - MyY
+			if (-0.25*np.pi) < MyHeading <= (0.75*np.pi):  # check northwest
+				if Xdistance >= 0 and Ydistance >= 0:
+					robot_ahead = True
+			if (0.25*np.pi) < MyHeading <= (1.25*np.pi):  # check southwest
+				if Xdistance <= 0 and Ydistance >= 0:
+					robot_ahead = True
+			if (-1.25*np.pi) < MyHeading <= (-0.25*np.pi):  # check southeast
+				if Xdistance <= 0 and Ydistance <= 0:
+					robot_ahead = True
+			if (-0.75*np.pi) < MyHeading <= (0.25*np.pi):  # check northeast
+				if Xdistance >= 0 and Ydistance <= 0:
+					robot_ahead = True
 
 def check_laser(msg):
 	global object_ahead
@@ -60,52 +97,6 @@ def check_laser(msg):
 		object_ahead = True
 		print("object ahead")
 
-
-def check_robot2(msg):
-	global robot_ahead
-	robot_ahead = False
-	R2.x = float(msg.pose.pose.position.x)
-	R2.y = float(msg.pose.pose.position.y)
-	distance = math.sqrt((R2.x - R1.x)**2 + (R2.y - R1.y)**2)
-	if distance < 1:  # only do any of this if robot2 is close
-		Xdistance = R2.x - R1.x
-		Ydistance = R2.y - R1.y
-		if (-0.25*np.pi) < R1.heading <= (0.75*np.pi):  # check northwest
-			if Xdistance >= 0 and Ydistance >= 0:
-				robot_ahead = True
-		if (0.25*np.pi) < R1.heading <= (1.25*np.pi):  # check southwest
-			if Xdistance <= 0 and Ydistance >= 0:
-				robot_ahead = True
-		if (-1.25*np.pi) < R1.heading <= (-0.25*np.pi):  # check southeast
-			if Xdistance <= 0 and Ydistance <= 0:
-				robot_ahead = True
-		if (-0.75*np.pi) < R1.heading <= (0.25*np.pi):  # check northeast
-			if Xdistance >= 0 and Ydistance <= 0:
-				robot_ahead = True
-
-
-def check_robot3(msg):
-	global robot_ahead
-	R3.x = float(msg.pose.pose.position.x)
-	R3.y = float(msg.pose.pose.position.y)
-	distance = math.sqrt((R3.x - R1.x)**2 + (R3.y - R1.y)**2)
-	if distance < 1:  # only do any of this if robot3 is close
-		Xdistance = R3.x - R1.x
-		Ydistance = R3.y - R1.y
-		if (-0.25*np.pi) < R1.heading <= (0.75*np.pi):  # check northwest
-			if Xdistance >= 0 and Ydistance >= 0:
-				robot_ahead = True
-		if (0.25*np.pi) < R1.heading <= (1.25*np.pi):  # check southwest
-			if Xdistance <= 0 and Ydistance >= 0:
-				robot_ahead = True
-		if (-1.25*np.pi) < R1.heading <= (-0.25*np.pi):  # check southeast
-			if Xdistance <= 0 and Ydistance <= 0:
-				robot_ahead = True
-		if (-0.75*np.pi) < R1.heading <= (0.25*np.pi):  # check northeast
-			if Xdistance >= 0 and Ydistance <= 0:
-				robot_ahead = True
-
-
 def go(msg):
 	global object_ahead
 	global orders
@@ -114,8 +105,6 @@ def go(msg):
 	global TargetY
 	global Ready
 	global right
-	all_robots = [R1, R2, R3]
-	all_spots = [S1, S2, S3]
 	if orders == "1":
 		assigned = False
 		right = False
@@ -448,10 +437,15 @@ def listener():
 	rospy.init_node('listener')
 	rospy.Subscriber("/chatter", String, update_orders)
 	rospy.Subscriber("/robot1/scan", LaserScan, check_laser)
-	rospy.Subscriber("/robot1/odom", Odometry, get_rotation_pos)
-	rospy.Subscriber("/robot2/odom", Odometry, check_robot2)
-	rospy.Subscriber("/robot3/odom", Odometry, check_robot3)
-	rospy.Subscriber("/robot1/odom", Odometry, get_rotation_pos)
+	R1_pose = message_filters.Subscriber('/robot1/odom', Odometry)
+	R2_pose = message_filters.Subscriber('/robot2/odom', Odometry)
+	R3_pose = message_filters.Subscriber('/robot3/odom', Odometry)
+	R4_pose = message_filters.Subscriber('/robot4/odom', Odometry)
+	R5_pose = message_filters.Subscriber('/robot5/odom', Odometry)
+	R6_pose = message_filters.Subscriber('/robot6/odom', Odometry)
+	R7_pose = message_filters.Subscriber('/robot7/odom', Odometry)
+	ts = message_filters.TimeSynchronizer([R1_pose, R2_pose, R3_pose, R4_pose, R5_pose, R6_pose, R7_pose], 10)
+	ts.registerCallback(check_robots)
 	rospy.Subscriber("/robot1/odom", Odometry, go)
 	rospy.spin()
 
