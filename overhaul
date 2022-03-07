@@ -98,8 +98,6 @@ def check_laser(msg):
 		print("object ahead")
 
 def go(msg):
-	global object_ahead
-	global orders
 	global assigned
 	global TargetX
 	global TargetY
@@ -107,30 +105,24 @@ def go(msg):
 	global right
 	if orders == "1":
 		assigned = False
+		in_position = False
+		heading_north = False
+		heading_fixed = False
 		right = False
 		for item in all_robots:
 			item.spot = 0
 		for item in all_spots:
 			item.occupied = False
-		if object_ahead:
-			move = Twist()
+		move = Twist()
+		move.linear.y = 0.0
+		if object_ahead or if robot_ahead:
 			move.linear.x = 0.0
 			move.angular.z = 0.5
-			move.linear.y = 0.0
-			pub = rospy.Publisher("/robot1/cmd_vel", Twist, queue_size=1)
-			pub.publish(move)
-		if robot_ahead:
-			move = Twist()
-			move.linear.x = 0.0
-			move.angular.z = 0.5
-			move.linear.y = 0.0
 			pub = rospy.Publisher("/robot1/cmd_vel", Twist, queue_size=1)
 			pub.publish(move)
 		if not object_ahead and not robot_ahead:
-			move = Twist()
 			move.linear.x = 0.5
 			move.angular.z = 0.0
-			move.linear.y = 0.0
 			pub = rospy.Publisher("/robot1/cmd_vel", Twist, queue_size=1)
 			pub.publish(move)
 	if orders == "0":
@@ -138,9 +130,9 @@ def go(msg):
 		in_position = False
 		heading_north = False
 		heading_fixed = False
+		right = False
 		for item in all_spots:
 			item.occupied = False
-		right = False
 		move = Twist()
 		move.linear.x = 0.0
 		move.angular.z = 0.0
@@ -154,13 +146,29 @@ def go(msg):
 		S2.y = 0
 		S3.x = 2
 		S3.y = 0
+		S4.x = 0
+		S4.y = 1
+		S5.x = 1
+		S5.y = 1
+		S6.x = 2
+		S6.y = 1
+		S7.x = 0
+		S7.y = 2
 	if orders == "3":
-		S1.x = 2
-		S1.y = 2
-		S2.x = 1
-		S2.y = 1
-		S3.x = 2
-		S3.y = 0
+		S1.x = 3
+		S1.y = 3
+		S2.x = 2.5
+		S2.y = 2.5
+		S3.x = 2.0
+		S3.y = 2.0
+		S4.x = 1.5
+		S4.y = 1.5
+		S5.x = 2.0
+		S5.y = 1
+		S6.x = 2.5
+		S6.y = 0.5
+		S7.x = 3
+		S7.y = 0
 	if orders == "4":
 		S1.y = 0
 		S1.x = 0
@@ -168,17 +176,33 @@ def go(msg):
 		S2.x = 0
 		S3.y = 2
 		S3.x = 0
+		S4.y = 0
+		S4.x = 1
+		S5.y = 1
+		S5.x = 1
+		S6.y = 2
+		S6.x = 1
+		S7.y = 0
+		S7.x = 2
 	if orders == "5":
-		S1.x = 1.7
-		S1.y = 1.5
-		S2.x = 1.25
-		S2.y = 1.2
-		S3.x = 1.25
-		S3.y = 1.7
+		S1.x = 1.5
+		S1.y = 0.5
+		S2.x = 2.207
+		S2.y = 0.793
+		S3.x = 2.5
+		S3.y = 1.5
+		S4.x = 2.207
+		S4.y = 2.207
+		S5.x = 1.5
+		S5.y = 2.5
+		S6.x = 0.793
+		S6.y = 2.207
+		S7.x = 0.5
+		S7.y = 1.5
 	if orders == "2" or orders == "3" or orders == "4" or orders == "5":
 		Ready = False
-		center_x = float((S1.x + S2.x + S3.x)/3)
-		center_y = float((S1.y + S2.y + S3.y)/3)
+		center_x = float((S1.x + S2.x + S3.x + S4.x + S5.x + S6.x + S7.x)/7)
+		center_y = float((S1.y + S2.y + S3.y + S4.y + S5.y + S6.y + S7.y)/7)
 		if not assigned:
 			print("robots are not assigned yet")
 			move = Twist()
