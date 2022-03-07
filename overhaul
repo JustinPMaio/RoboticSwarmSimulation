@@ -50,6 +50,7 @@ def update_orders(msg):
 def check_robots(R1_pose, R2_pose, R3_pose, R4_pose, R5_pose, R6_pose, R7_pose):
 	global roll, pitch, yaw
 	global robot_ahead
+	global R1_pose
 	robot_ahead = False
 	orientation_q = msg.pose.pose.orientation
 	orientation_list = [orientation_q.x, orientation_q.y, orientation_q.z, orientation_q.w]
@@ -103,6 +104,7 @@ def go(msg):
 	global TargetY
 	global Ready
 	global right
+	global R1_pose
 	if orders == "1":
 		assigned = False
 		in_position = False
@@ -332,22 +334,10 @@ def go(msg):
 						heading_fixed = False
 					if heading_fixed = True:
 						move.angular.z = 0.0
-						nav_msgs::Odometry odom;
-						odom.header.stamp = current_time
-						odom.header.frame_id = "odom"
-						odom.pose.pose.position.x = 3.65 - ranges[0]
-						odom.pose.pose.position.y = ranges[90]
-						odom.pose.pose.position.z = 0.0
-						odom.pose.pose.orientation.w = 0
-						odom.pose.pose.orientation.x = 0
-						odom.pose.pose.orientation.y = 0
-						odom.pose.pose.orientation.z = 0
-						odom.child_frame_id = "base_link"
-						odom.twist.twist.linear.x = 0
-						odom.twist.twist.linear.y = 0
-						odom.twist.twist.angular.z = 0						
+						R1_pose.pose.pose.position.x = 3.65 - ranges[0]
+						R1_pose.pose.pose.position.y = ranges[90]					
 						pub3 = rospy.Publisher("/robot1/odom", Odometry, queue_size=1)
-						pub3.publish(odom)
+						pub3.publish(R1_pose)
 						print("Now I KNOW I'm facing North")
 				pub = rospy.Publisher("/robot1/cmd_vel", Twist, queue_size=2)
 				pub.publish(move)
