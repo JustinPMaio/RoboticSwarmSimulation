@@ -213,76 +213,37 @@ def go(msg):
 			for item in all_robots:
 				item.distance = math.sqrt(((center_x - item.x)**2)+((center_y - item.y)**2))
 			robot_distances = [0.0, R1.distance, R2.distance, R3.distance, R4.distance, R5.distance, R6.distance, R7.distance]
+			sorted_robot_distances = sorted(robot_distances, reverse=True)
 			available_spots = [S1, S2, S3, S4, S5, S6, S7]
-			leader_message = "Robot 1 is the Leader"
+			available_robots = [R1, R2, R3, R4, R5, R6, R7]
 			while not assigned:
-				if max(robot_distances) == R1.distance: #if I am the furthest robot away from the formation
-					robot_distances.remove(R1.distance)
-					for item in available_spots:
-						if item.occupied:
-							available_spots.remove(item)
-					check_distance = 100
-					for item in available_spots:
-						potential_distance = math.sqrt((item.x - R1.x)**2 + (item.y - R1.y)**2)
-						if potential_distance < check_distance:
-							check_distance = potential_distance
-							R1.spot = item.number 
-					for item in available_spots:
-						if R1.spot == item.number:
-							item.occupied = True
-					if R1.spot == S1.number: #if I am the leader 
-						print("I am the leader")
-				if len(robot_distances) == 1:
+				for item in sorted_robot_distances:
+					for robot in all_robots:
+						if item == robot.distance:
+							sorted_robot_distances.remove(item)
+							for item in available_spots:
+								if item.occupied:
+									available_spots.remove(item)
+							check_distance = 100
+							for spot in available_spots:
+								potential_distance = math.sqrt((spot.x - robot.x)**2 + (spot.y - robot.y)**2)
+								if potential_distance < check_distance:
+									check_distance = potential_distance
+									robot.spot = spot.number
+							for spot in available_spots:
+								if robot.spot == item.number:
+									item.occupied = True
+				if len(sorted_robot_distances) == 1:
 					assigned = True
-					break
-				if max(robot_distances) == R2Dist:
-					robot_distances.remove(R2Dist)
-					for item in available_spots:
-						if item.occupied:
-							available_spots.remove(item)
-					check_distance = 100
-					for item in available_spots:
-						potential_distance = math.sqrt((item.x - R2.x)**2 + (item.y - R2.y)**2)
-						if potential_distance < check_distance:
-							check_distance = potential_distance
-							R2.spot = item.number 
-					for item in available_spots:
-						if R2.spot == item.number:
-							item.occupied = True
-					decision_message += " R2spot" + str(R2.spot) 
-				if len(robot_distances) == 1:
-					assigned = True
-					break
-				if max(robot_distances) == R3Dist:
-					robot_distances.remove(R3Dist)
-					for item in available_spots:
-						if item.occupied:
-							available_spots.remove(item)
-					check_distance = 100
-					for item in available_spots:
-						potential_distance = math.sqrt((item.x - R3.x)**2 + (item.y - R3.y)**2)
-						if potential_distance < check_distance:
-							check_distance = potential_distance
-							R3.spot = item.number 
-					for item in available_spots:
-						if R3.spot == item.number:
-							item.occupied = True
-				decision_message += " R3spot" + str(R3.spot) 
-				if len(robot_distances) == 1:
-					assigned = True
-					break
-			print(decision_message)
-			pub2 = rospy.Publisher('/robot1/chatter', String, queue_size=1)
-			rate = rospy.Rate(10)
-			pub2.publish(decision_message)
+		MySpot = R1.spot
 		for item in all_spots:
-			if R1.spot == item.number:  # the robot needs to point to its assigned position.
-				angle = atan2(R1.y - item.y, R1.x - item.x) - np.pi
+			if MySpot == item.number:  # the robot needs to point to its assigned position.
+				angle = atan2(MyY - item.y, MyX - item.x) - np.pi
 				TargetX = item.x
 				TargetY = item.y
 		if angle < -3.1415:
 			angle += (2*np.pi)  # important line of code to make sure the angle value stays in the correct range of values
-		if (angle-0.3) < R1.heading < (angle + 0.3):
+		if (angle-0.3) < MyHeading < (angle + 0.3):
 			Ready = True
 			move = Twist()
 			move.linear.x = 0.0
@@ -291,18 +252,18 @@ def go(msg):
 			pub = rospy.Publisher("/robot1/cmd_vel", Twist, queue_size=2)
 			pub.publish(move)
 		if not Ready:
-			target_distance = math.sqrt(((R1.y-TargetY)**2)+((R1.x - TargetX)**2))
+			target_distance = math.sqrt(((MyY-TargetY)**2)+((MyX - TargetX)**2))
 			if target_distance > 0.05:
-				if 0 <= R1.heading < (np.pi/2):  # get the rover to turn right in some cases, depending on its quadrant
+				if 0 <= MyHeading < (np.pi/2):  # get the rover to turn right in some cases, depending on its quadrant
 					if (np.pi/-2) <= angle <= 0:
 						right = True
-				if (np.pi/-2) <= R1.heading < 0:
+				if (np.pi/-2) <= MyHeading < 0:
 					if (np.pi*-1) <= angle <= (np.pi/-2):
 						right = True
-				if (np.pi/-1) <= R1.heading < (np.pi/-2):
+				if (np.pi/-1) <= MyHeading < (np.pi/-2):
 					if (np.pi/2) <= angle <= np.pi:
 						right = True
-				if (np.pi/2) <= R1.heading < np.pi:
+				if (np.pi/2) <= MyHeading < np.pi:
 					if 0 <= angle <= (np.pi/2):
 						right = True
 				move = Twist()
@@ -325,7 +286,7 @@ def go(msg):
 		if Ready:
 			print("drive ahead")
 			right = False
-			target_distance = math.sqrt(((R1.y-TargetY)**2)+((R1.x - TargetX)**2))
+			target_distance = math.sqrt(((MyY-TargetY)**2)+((MyX - TargetX)**2))
 			if target_distance > 0.05 and if not in_position:
 				move = Twist()
 				move.linear.x = 0.5
@@ -353,7 +314,7 @@ def go(msg):
 				move.angular.z = 0.3
 				if -0.05 < R1.heading < 0.05:
 					move.angular.z = 0.0
-					heading_fixed = True
+					heading_north = True
 					print("I think I'm facing North")
 				pub = rospy.Publisher("/robot1/cmd_vel", Twist, queue_size=2)
 				pub.publish(move)
@@ -402,19 +363,19 @@ def go(msg):
 				angle = float(atan2((1.5 - item.y), (1.5 - item.x)) - np.pi)
 		if angle < -3.1415:
 			angle += (2*np.pi)  # important line of code to make sure the angle value stays in the correct range of values
-		if (angle-0.3) < R1.heading < (angle + 0.3):
+		if (angle-0.3) < MyHeading < (angle + 0.3):
 			Ready = True
 		if not Ready:
-			if 0 <= R1.heading < (np.pi/2):  # get the rover to turn right in some cases, depending on its quadrant
+			if 0 <= MyHeading < (np.pi/2):  # get the rover to turn right in some cases, depending on its quadrant
 				if (np.pi/-2) <= angle <= 0:
 					right = True
-			if (np.pi/-2) <= R1.heading < 0:
+			if (np.pi/-2) <= MyHeading < 0:
 				if (np.pi*-1) <= angle <= (np.pi/-2):
 					right = True
-			if (np.pi/-1) <= R1.heading < (np.pi/-2):
+			if (np.pi/-1) <= MyHeading < (np.pi/-2):
 				if (np.pi/2) <= angle <= np.pi:
 					right = True
-			if (np.pi/2) <= R1.heading < np.pi:
+			if (np.pi/2) <= MyHeading < np.pi:
 				if 0 <= angle <= (np.pi/2):
 					right = True
 			move = Twist()
