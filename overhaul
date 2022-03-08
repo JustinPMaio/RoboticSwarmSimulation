@@ -87,16 +87,42 @@ def check_robots(R1_pose, R2_pose, R3_pose, R4_pose, R5_pose, R6_pose, R7_pose):
 			if (-0.75*np.pi) < MyHeading <= (0.25*np.pi):  # check northeast
 				if Xdistance >= 0 and Ydistance <= 0:
 					robot_ahead = True
+	if orders == "7": #determine who the leader is
+		check = -100
+		for robot in all_robots:
+			leadership_potential = robot.x*sin(MyHeading) + robot.y*cos(MyHeading)
+			if leadership_potential > check:
+				check = leadership_potential
+		for robot in all_robots:
+			robot.leader = False
+			if check == robot.x*sin(MyHeading) + robot.y*cos(MyHeading):
+				robot.leader = True
+				print(robot)
+				print("is the leader")
 
-def check_laser(msg):
+def check_laser(R1_laser, R2_laser, R3_laser, R4_laser, R5_laser, R6_laser, R7_laser):
 	global object_ahead
 	global ranges
-	ranges = msg.ranges
+	R1.ranges = R1_laser.ranges
+	R2.ranges = R1_laser.ranges
+	R3.ranges = R1_laser.ranges
+	R4.ranges = R1_laser.ranges
+	R5.ranges = R1_laser.ranges
+	R6.ranges = R1_laser.ranges
+	R7.ranges = R1_laser.ranges
 	object_ahead = False
-	object_ahead_distance = min(msg.ranges[0], msg.ranges[10], msg.ranges[20], msg.ranges[350], msg.ranges[340])
+	object_ahead_distance = min(R1.ranges[0], R1.ranges[10], R1.ranges[20], R1.ranges[350], R1.ranges[340])
 	if object_ahead_distance < 0.8:
 		object_ahead = True
 		print("object ahead")
+	if orders == "7":
+		object_ahead = False
+		for robot in all_robots:
+			if robot.leader == True:
+				object_ahead_distance = min(robot.ranges[0], robot.ranges[10], robot.ranges[20], robot.ranges[350], robot.ranges[340])
+				if object_ahead_distance < 0.8:
+					object_ahead = True
+					print("leader has object ahead")
 
 def go(msg):
 	global assigned
@@ -394,6 +420,28 @@ def go(msg):
 			move.linear.y = 0.0
 			pub = rospy.Publisher("/robot1/cmd_vel", Twist, queue_size=2)
 			pub.publish(move)
+	if orders == "7": #like 1, but traveling in a group instead of individually
+		assigned = False
+		in_position = False
+		heading_north = False
+		heading_fixed = False
+		right = False
+		for item in all_robots:
+			item.spot = 0
+		for item in all_spots:
+			item.occupied = False
+		move = Twist()
+		move.linear.y = 0.0
+		if object_ahead:
+			move.linear.x = 0.0
+			move.angular.z = 0.5
+			pub = rospy.Publisher("/robot1/cmd_vel", Twist, queue_size=1)
+			pub.publish(move)
+		if not object_ahead:
+			move.linear.x = 0.5
+			move.angular.z = 0.0
+			pub = rospy.Publisher("/robot1/cmd_vel", Twist, queue_size=1)
+			pub.publish(move)
 
 
 def signal_handler(signal, frame):
@@ -410,7 +458,6 @@ def signal_handler(signal, frame):
 def listener():
 	rospy.init_node('listener')
 	rospy.Subscriber("/chatter", String, update_orders)
-	rospy.Subscriber("/robot1/scan", LaserScan, check_laser)
 	R1_pose = message_filters.Subscriber('/robot1/odom', Odometry)
 	R2_pose = message_filters.Subscriber('/robot2/odom', Odometry)
 	R3_pose = message_filters.Subscriber('/robot3/odom', Odometry)
@@ -420,6 +467,15 @@ def listener():
 	R7_pose = message_filters.Subscriber('/robot7/odom', Odometry)
 	ts1 = message_filters.TimeSynchronizer([R1_pose, R2_pose, R3_pose, R4_pose, R5_pose, R6_pose, R7_pose], 10)
 	ts1.registerCallback(check_robots)
+	R1_laser = message_filters.Subscriber('/robot1/odom', Odometry)
+	R2_laser = message_filters.Subscriber('/robot2/odom', Odometry)
+	R3_laser = message_filters.Subscriber('/robot3/odom', Odometry)
+	R4_laser = message_filters.Subscriber('/robot4/odom', Odometry)
+	R5_laser = message_filters.Subscriber('/robot5/odom', Odometry)
+	R6_laser = message_filters.Subscriber('/robot6/odom', Odometry)
+	R7_laser = message_filters.Subscriber('/robot7/odom', Odometry)
+	ts2 = message_filters.TimeSynchronizer([R1_laser, R2_laser, R3_laser, R4_laser, R5_laser, R6_laser, R7_laser], 10)
+	ts2.registerCallback(check_robots)
 	rospy.Subscriber("/robot1/odom", Odometry, go)
 	rospy.spin()
 
