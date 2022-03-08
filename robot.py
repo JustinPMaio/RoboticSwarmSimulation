@@ -7,6 +7,7 @@ class Robot:
 		self.heading = float(0)
 		self.spot = float(0)
 		self.distance = float(0)
+		self.leader = bool(False)
 
 class Spot:
 	def __init__(self, x, y, number):
