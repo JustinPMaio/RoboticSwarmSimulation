@@ -3,7 +3,7 @@ import math
 from math import atan2, degrees
 import rospy
 import time
-from geometry_msgs.msg import Twist
+from geometry_msgs.msg import Twist, PoseWithCovarianceStamped
 import numpy as np
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import LaserScan
@@ -186,7 +186,7 @@ def go(msg):
 		S2.y = 1.2
 		S3.x = 1.25
 		S3.y = 1.7
-	if orders == "2" or orders == "3" or orders == "4" or orders == "5":
+	if orders == "2" or orders == "3" or orders == "4" or orders == "5": #2 is vertical line, 3 horizontal, 4 V, 5 cluster
 		Ready = False
 		center_x = float((S1.x + S2.x + S3.x)/3)
 		center_y = float((S1.y + S2.y + S3.y)/3)
@@ -278,7 +278,7 @@ def go(msg):
 			move.linear.y = 0.0
 			pub = rospy.Publisher("/robot1/cmd_vel", Twist, queue_size=2)
 			pub.publish(move)
-		if not Ready:
+		if not Ready: #Ready means pointing toward spot in formation
 			target_distance = math.sqrt(((R1.y-TargetY)**2)+((R1.x - TargetX)**2))
 			if target_distance > 0.05:
 				if 0 <= R1.heading < (np.pi/2):  # get the rover to turn right in some cases, depending on its quadrant
@@ -345,7 +345,7 @@ def go(msg):
 					print("I think I'm facing North")
 				pub = rospy.Publisher("/robot1/cmd_vel", Twist, queue_size=2)
 				pub.publish(move)
-			if heading_north:
+"""			if heading_north:
 				if R1.Spot == S3:
 					heading_fixed = True
 					move = Twist()
@@ -377,9 +377,9 @@ def go(msg):
 						pub3.publish(odom)
 						print("Now I KNOW I'm facing North")
 				pub = rospy.Publisher("/robot1/cmd_vel", Twist, queue_size=2)
-				pub.publish(move)
+				pub.publish(move) """
 				
-	if orders == "6":
+	if orders == "6": #Spread command
 		assigned = False
 		Ready = False
 		for item in all_spots:
@@ -448,10 +448,9 @@ def listener():
 	rospy.init_node('listener')
 	rospy.Subscriber("/chatter", String, update_orders)
 	rospy.Subscriber("/robot1/scan", LaserScan, check_laser)
-	rospy.Subscriber("/robot1/odom", Odometry, get_rotation_pos)
-	rospy.Subscriber("/robot2/odom", Odometry, check_robot2)
-	rospy.Subscriber("/robot3/odom", Odometry, check_robot3)
-	rospy.Subscriber("/robot1/odom", Odometry, get_rotation_pos)
+	rospy.Subscriber("/robot1/amcl_pose", PoseWithCovarianceStamped, get_rotation_pos)
+	rospy.Subscriber("/robot2/amcl_pose", PoseWithCovarianceStamped, check_robot2)
+	rospy.Subscriber("/robot3/amcl_pose", PoseWithCovarianceStamped, check_robot3)
 	rospy.Subscriber("/robot1/odom", Odometry, go)
 	rospy.spin()
 
